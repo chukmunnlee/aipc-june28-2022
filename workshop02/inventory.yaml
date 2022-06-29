@@ -1,0 +1,10 @@
+all:
+  vars:
+    ansible_connection: ssh
+    ansible_user: root
+    ansible_ssh_private_key_file: /opt/tmp/chuk
+  hosts:
+    codeserver:
+      ansible_host: 128.199.194.190
+      codeserver_domain: codeserver.chuklee.com
+      codeserver_password: changeit
