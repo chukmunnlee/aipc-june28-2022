@@ -7,7 +7,7 @@ data docker_image dov-bear {
 }
 
 resource docker_container dov-bear-container {
-    count = length(var.ports)
+    count = var.app_instances
     name = "dov-bear-${count.index}"
     image = data.docker_image.dov-bear.id
     env = [
@@ -16,8 +16,21 @@ resource docker_container dov-bear-container {
     ]
     ports {
         internal = 3000
-        external = var.ports[count.index]
     }
+}
+
+resource local_file root_at_nginx {
+    content = ""
+    filename = "root@${digitalocean_droplet.nginx.ipv4_address}"
+}
+
+resource local_file nginx-conf {
+    content = templatefile("./nginx.conf.tpl", {
+        host_ip = var.docker_host_ip 
+        container_ports = docker_container.dov-bear-container[*].ports[0].external
+    })
+    filename = "nginx.conf"
+    file_permission = "0444"
 }
 
 /* ---- nginx --- */
@@ -41,11 +54,19 @@ resource digitalocean_droplet nginx {
             "systemctl start nginx"
         ]
     }
+    provisioner file {
+        source = "./nginx.conf"
+        destination = "/etc/nginx/nginx.conf"
+    }
+    provisioner remote-exec {
+        inline = [
+            "systemctl restart nginx"
+        ]
+    }
 }
 
-resource local_file root_at_nginx {
-    content = ""
-    filename = "root@${digitalocean_droplet.nginx.ipv4_address}"
+output container_ports {
+    value = docker_container.dov-bear-container[*].ports[0].external
 }
 
 output nginx_ip {
