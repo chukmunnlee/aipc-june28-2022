@@ -1,3 +1,15 @@
+data terraform_remote_state nginx_droplet {
+  backend = "s3"
+  config = {
+    skip_credentials_validation = true 
+    skip_metadata_api_check = true 
+    skip_region_validation = true
+    endpoint = "https://sgp1.digitaloceanspaces.com"
+    region = "sgp1"
+    bucket = "bigbucket"
+    key = "aipc/terraform.tfstate"
+  }
+}
 data digitalocean_ssh_key chuk {
   name = "chuk"
 }
@@ -41,4 +53,8 @@ resource local_file root_at_nginx {
 
 output nginx_ip {
   value = digitalocean_droplet.code-server.ipv4_address
+}
+
+output nginx_from_day03a {
+  value = data.terraform_remote_state.nginx_droplet.outputs.nginx_ip
 }
